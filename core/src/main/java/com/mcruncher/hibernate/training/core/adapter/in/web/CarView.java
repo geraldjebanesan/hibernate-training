@@ -60,22 +60,6 @@ public class CarView extends VerticalLayout
         add(createHeader(), getTabs());
     }
 
-    private void configureBinder()
-    {
-        binder.forField(brand)
-                .asRequired("Brand is required")
-                .bind(Car::getBrand, Car::setBrand);
-
-        binder.forField(model)
-                .asRequired("Model is required")
-                .bind(Car::getModel, Car::setModel);
-
-        binder.forField(topSpeedInKilometersPerHour)
-                .asRequired("Top speed is required")
-                .withValidator(speed -> speed != null && speed > 0, "Speed must be greater than 0")
-                .bind(Car::getTopSpeedInKilometersPerHour, Car::setTopSpeedInKilometersPerHour);
-    }
-
     private void initLayout()
     {
         this.setPadding(true);
@@ -130,6 +114,22 @@ public class CarView extends VerticalLayout
             deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY);
             return deleteButton;
         }).setHeader("Actions").setAutoWidth(true);
+    }
+
+    private void configureBinder()
+    {
+        binder.forField(brand)
+                .asRequired("Brand is required")
+                .bind(Car::getBrand, Car::setBrand);
+
+        binder.forField(model)
+                .asRequired("Model is required")
+                .bind(Car::getModel, Car::setModel);
+
+        binder.forField(topSpeedInKilometersPerHour)
+                .asRequired("Top speed is required")
+                .withValidator(speed -> speed != null && speed > 0, "Speed must be greater than 0")
+                .bind(Car::getTopSpeedInKilometersPerHour, Car::setTopSpeedInKilometersPerHour);
     }
 
     private @NonNull TabSheet getTabs()
