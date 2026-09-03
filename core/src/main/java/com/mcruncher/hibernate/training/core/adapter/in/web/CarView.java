@@ -7,19 +7,24 @@ package com.mcruncher.hibernate.training.core.adapter.in.web;
 
 import com.mcruncher.hibernate.training.core.application.domain.Car;
 import com.mcruncher.hibernate.training.core.application.port.out.persistence.CarPersistencePort;
-import com.vaadin.copilot.theme.ApplicationTheme;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.TabSheet;
+import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import org.jspecify.annotations.NonNull;
 
 /**
@@ -31,17 +36,13 @@ import org.jspecify.annotations.NonNull;
 @PageTitle("Car")
 public class CarView extends VerticalLayout
 {
-    // Form components
-    private final TextField brand;
-    private final TextField model;
-    private final TextField topSpeedInKilometersPerHour;
-    private final Button saveButton;
+    private final TextField brand = new TextField("Brand");
+    private final TextField model = new TextField("Model");
+    private final IntegerField topSpeedInKilometersPerHour = new IntegerField("Top Speed (km/h)");
+    private final Button saveButton = new Button("Save Car", VaadinIcon.PLUS.create());
 
-    // Entity - Form Binder
     private final Binder<Car> binder = new Binder<>(Car.class);
-
-    // Datatable
-    private final Grid<Car> carGrid = new Grid<>(Car.class);
+    private final Grid<Car> carGrid = new Grid<>(Car.class, false);
 
     private final transient CarPersistencePort carPersistencePort;
 
@@ -50,37 +51,100 @@ public class CarView extends VerticalLayout
         super();
         this.carPersistencePort = carPersistencePort;
 
-        this.brand = new TextField("Brand");
-        this.model = new TextField("Model");
-        this.topSpeedInKilometersPerHour = new TextField("Top Speed In Kilometers Per Hour");
-        this.saveButton = new Button("Save Car");
-
-        init();
-        binder.bindInstanceFields(this);
-        saveButton.addClickListener(event -> saveCar());
-        carGrid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_COMPACT, GridVariant.LUMO_COLUMN_BORDERS);
+        initLayout();
+        configureForm();
+        configureGrid();
+        configureBinder();
         refreshGrid();
-        add(getTabs());
+
+        add(createHeader(), getTabs());
     }
 
-    private void init()
+    private void configureBinder()
     {
-        this.setThemeName(ApplicationTheme.LUMO.name());
+        binder.forField(brand)
+                .asRequired("Brand is required")
+                .bind(Car::getBrand, Car::setBrand);
+
+        binder.forField(model)
+                .asRequired("Model is required")
+                .bind(Car::getModel, Car::setModel);
+
+        binder.forField(topSpeedInKilometersPerHour)
+                .asRequired("Top speed is required")
+                .withValidator(speed -> speed != null && speed > 0, "Speed must be greater than 0")
+                .bind(Car::getTopSpeedInKilometersPerHour, Car::setTopSpeedInKilometersPerHour);
+    }
+
+    private void initLayout()
+    {
         this.setPadding(true);
-        this.setMargin(true);
+        this.setSpacing(true);
         this.setSizeFull();
+        this.setMaxWidth("1200px");
+        this.getStyle().set("margin", "0 auto");
+    }
+
+    private VerticalLayout createHeader()
+    {
+        H2 title = new H2("Car Fleet Management");
+        title.addClassNames(LumoUtility.Margin.Bottom.NONE, LumoUtility.Margin.Top.NONE);
+
+        Paragraph subtitle = new Paragraph("Manage and monitor vehicle speeds and performance metrics.");
+        subtitle.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.Margin.Top.XSMALL);
+
+        VerticalLayout header = new VerticalLayout(title, subtitle);
+        header.setPadding(false);
+        header.setSpacing(false);
+        return header;
+    }
+
+    private void configureForm()
+    {
+        brand.setPlaceholder("e.g. BMW");
+        brand.setRequired(true);
+        model.setPlaceholder("e.g. M3");
+        model.setRequired(true);
+        topSpeedInKilometersPerHour.setPlaceholder("e.g. 280");
+
+        saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        saveButton.addClickListener(event -> saveCar());
+    }
+
+    private void configureGrid()
+    {
+        carGrid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_NO_BORDER);
+        carGrid.addColumn(Car::getId).setHeader("ID").setAutoWidth(true);
+        carGrid.addColumn(Car::getBrand).setHeader("Brand").setSortable(true);
+        carGrid.addColumn(Car::getModel).setHeader("Model").setSortable(true);
+        carGrid.addColumn(Car::getTopSpeedInKilometersPerHour).setHeader("Speed (km/h)").setSortable(true);
+        carGrid.addColumn(car -> String.format("%.2f m/s", car.getTopSpeedInMetresPerSecond())).setHeader("Speed (m/s)");
+        carGrid.addColumn(car -> String.format("%.2f mph", car.getTopSpeedInMilesPerHour())).setHeader("Speed (mph)");
+        addDeleteColumn();
+    }
+
+    private void addDeleteColumn()
+    {
+        carGrid.addComponentColumn(car -> {
+            Button deleteButton = new Button(VaadinIcon.TRASH.create(), event -> deleteCar(car));
+            deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY);
+            return deleteButton;
+        }).setHeader("Actions").setAutoWidth(true);
     }
 
     private @NonNull TabSheet getTabs()
     {
-        VerticalLayout createCarsTabContent = new VerticalLayout(createFormLayout(), saveButton);
-        VerticalLayout viewCarsTabContent = new VerticalLayout(carGrid);
-        viewCarsTabContent.setSizeFull();
+        VerticalLayout createCard = new VerticalLayout(createFormLayout(), saveButton);
+        styleAsCard(createCard);
+
+        VerticalLayout viewCard = new VerticalLayout(carGrid);
+        styleAsCard(viewCard);
+        viewCard.setSizeFull();
 
         TabSheet tabSheet = new TabSheet();
         tabSheet.setSizeFull();
-        tabSheet.add("Create Car", createCarsTabContent);
-        tabSheet.add("View Cars", viewCarsTabContent);
+        tabSheet.add("Create Car", createCard);
+        tabSheet.add("View Cars", viewCard);
         tabSheet.addSelectedChangeListener(event -> refreshGrid());
         return tabSheet;
     }
@@ -88,9 +152,19 @@ public class CarView extends VerticalLayout
     private @NonNull FormLayout createFormLayout()
     {
         FormLayout formLayout = new FormLayout(brand, model, topSpeedInKilometersPerHour);
-        formLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1, FormLayout.ResponsiveStep.LabelsPosition.ASIDE));
-        formLayout.setMaxWidth("400px");
+        formLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1, FormLayout.ResponsiveStep.LabelsPosition.TOP));
+        formLayout.setMaxWidth("500px");
         return formLayout;
+    }
+
+    private void styleAsCard(VerticalLayout layout)
+    {
+        layout.addClassNames(
+                LumoUtility.Background.BASE,
+                LumoUtility.BorderRadius.LARGE,
+                LumoUtility.BoxShadow.SMALL,
+                LumoUtility.Padding.LARGE
+        );
     }
 
     private void saveCar()
@@ -100,13 +174,24 @@ public class CarView extends VerticalLayout
             binder.writeBean(newCar);
             carPersistencePort.create(newCar);
 
-            Notification.show("Car saved successfully!");
+            showNotification("Car saved successfully!");
             binder.readBean(new Car());
             refreshGrid();
-
         } catch (ValidationException e) {
-            Notification.show("Please check the form for errors. " + e.getMessage());
+            Notification.show("Please complete all required fields correctly.");
         }
+    }
+
+    private void deleteCar(Car car)
+    {
+        carPersistencePort.delete(car);
+        showNotification("Car deleted successfully!");
+        refreshGrid();
+    }
+
+    private void showNotification(String message)
+    {
+        Notification.show(message, 3000, Notification.Position.TOP_CENTER);
     }
 
     private void refreshGrid()

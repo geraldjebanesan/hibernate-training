@@ -33,9 +33,19 @@ public class Car
     @Column(nullable = false)
     private int topSpeedInKilometersPerHour;
 
+    /**
+     * Hibernate does this for us
+     * Cons:
+     * - Hibernate specific
+     * - Database specific because the column name needs to be as in DB (I created in H2)
+     */
     @Formula("0.621371 * TOP_SPEED_IN_KILOMETERS_PER_HOUR")
     private double topSpeedInMilesPerHour;
 
+    /**
+     * This is the JPA compliant way to do
+     * Defining a @Transient property and using the @Postload annotation on the method to compute
+     */
     @Transient
     private double topSpeedInMetresPerSecond;
 
