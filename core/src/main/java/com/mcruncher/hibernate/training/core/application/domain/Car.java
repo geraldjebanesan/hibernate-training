@@ -49,9 +49,16 @@ public class Car
     @Transient
     private double topSpeedInMetresPerSecond;
 
+    @Enumerated(EnumType.STRING)
+    private Type type;
+
     @PostLoad
     protected void calculateTopSpeedInMetres()
     {
         topSpeedInMetresPerSecond = Math.round(0.277778 * topSpeedInKilometersPerHour);
+    }
+
+    public enum Type {
+        SEDAN, HATCHBACK, SUV, MPV, SPORTS
     }
 }

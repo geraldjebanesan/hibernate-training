@@ -17,6 +17,7 @@ import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextField;
@@ -38,6 +39,7 @@ public class CarView extends VerticalLayout
 {
     private final TextField brand = new TextField("Brand");
     private final TextField model = new TextField("Model");
+    private final Select<Car.Type> type = new Select<>("Type", Car.Type.values());
     private final IntegerField topSpeedInKilometersPerHour = new IntegerField("Top Speed (km/h)");
     private final Button saveButton = new Button("Save Car", VaadinIcon.PLUS.create());
 
@@ -89,9 +91,11 @@ public class CarView extends VerticalLayout
         brand.setRequired(true);
         model.setPlaceholder("e.g. M3");
         model.setRequired(true);
+        type.setRequiredIndicatorVisible(true);
         topSpeedInKilometersPerHour.setPlaceholder("e.g. 280");
 
         saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        saveButton.addClassName(LumoUtility.Margin.Top.MEDIUM);
         saveButton.addClickListener(event -> saveCar());
     }
 
@@ -101,6 +105,7 @@ public class CarView extends VerticalLayout
         carGrid.addColumn(Car::getId).setHeader("ID").setAutoWidth(true);
         carGrid.addColumn(Car::getBrand).setHeader("Brand").setSortable(true);
         carGrid.addColumn(Car::getModel).setHeader("Model").setSortable(true);
+        carGrid.addColumn(Car::getType).setHeader("Type").setSortable(true);
         carGrid.addColumn(Car::getTopSpeedInKilometersPerHour).setHeader("Speed (km/h)").setSortable(true);
         carGrid.addColumn(car -> String.format("%.2f m/s", car.getTopSpeedInMetresPerSecond())).setHeader("Speed (m/s)");
         carGrid.addColumn(car -> String.format("%.2f mph", car.getTopSpeedInMilesPerHour())).setHeader("Speed (mph)");
@@ -125,6 +130,10 @@ public class CarView extends VerticalLayout
         binder.forField(model)
                 .asRequired("Model is required")
                 .bind(Car::getModel, Car::setModel);
+
+        binder.forField(type)
+                .asRequired("Type is required")
+                .bind(Car::getType, Car::setType);
 
         binder.forField(topSpeedInKilometersPerHour)
                 .asRequired("Top speed is required")
