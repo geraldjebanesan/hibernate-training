@@ -160,7 +160,7 @@ public class CarView extends VerticalLayout
 
     private @NonNull FormLayout createFormLayout()
     {
-        FormLayout formLayout = new FormLayout(brand, model, topSpeedInKilometersPerHour);
+        FormLayout formLayout = new FormLayout(brand, model, type, topSpeedInKilometersPerHour);
         formLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1, FormLayout.ResponsiveStep.LabelsPosition.TOP));
         formLayout.setMaxWidth("500px");
         return formLayout;
