@@ -9,13 +9,16 @@ import com.mcruncher.hibernate.training.core.application.domain.Car;
 import com.mcruncher.hibernate.training.core.application.port.out.persistence.CarPersistencePort;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.tabs.TabSheet;
@@ -25,6 +28,8 @@ import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.theme.Theme;
+import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import org.jspecify.annotations.NonNull;
 
@@ -96,7 +101,7 @@ public class CarView extends VerticalLayout
 
         saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         saveButton.addClassName(LumoUtility.Margin.Top.MEDIUM);
-        saveButton.addClickListener(event -> saveCar());
+        saveButton.addClickListener(_ -> saveCar());
     }
 
     private void configureGrid()
@@ -115,7 +120,7 @@ public class CarView extends VerticalLayout
     private void addDeleteColumn()
     {
         carGrid.addComponentColumn(car -> {
-            Button deleteButton = new Button(VaadinIcon.TRASH.create(), event -> deleteCar(car));
+            Button deleteButton = new Button(VaadinIcon.TRASH.create(), _ -> deleteCar(car));
             deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY);
             return deleteButton;
         }).setHeader("Actions").setAutoWidth(true);
@@ -154,7 +159,7 @@ public class CarView extends VerticalLayout
         tabSheet.setSizeFull();
         tabSheet.add("Create Car", createCard);
         tabSheet.add("View Cars", viewCard);
-        tabSheet.addSelectedChangeListener(event -> refreshGrid());
+        tabSheet.addSelectedChangeListener(_ -> refreshGrid());
         return tabSheet;
     }
 
@@ -183,24 +188,28 @@ public class CarView extends VerticalLayout
             binder.writeBean(newCar);
             carPersistencePort.create(newCar);
 
-            showNotification("Car saved successfully!");
+            showNotification("Car saved successfully!", NotificationVariant.LUMO_SUCCESS);
             binder.readBean(new Car());
             refreshGrid();
         } catch (ValidationException e) {
-            Notification.show("Please complete all required fields correctly.");
+            showNotification("Please complete all required fields correctly.", NotificationVariant.LUMO_ERROR);
         }
     }
 
     private void deleteCar(Car car)
     {
         carPersistencePort.delete(car);
-        showNotification("Car deleted successfully!");
+        showNotification("Car deleted successfully!", NotificationVariant.LUMO_SUCCESS);
         refreshGrid();
     }
 
-    private void showNotification(String message)
+    private void showNotification(String message, NotificationVariant colour)
     {
-        Notification.show(message, 3000, Notification.Position.TOP_CENTER);
+        Notification notification = new Notification(new Span(message));
+        notification.setDuration(3000);
+        notification.setPosition(Notification.Position.TOP_CENTER);
+        notification.addThemeVariants(colour);
+        notification.open();
     }
 
     private void refreshGrid()
